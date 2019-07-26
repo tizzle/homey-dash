@@ -1,7 +1,8 @@
 {
   "name": "homey-dash",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
+  "private": false,
   "dependencies": {
     "@emotion/core": "^10.0.14",
     "@emotion/styled": "^10.0.14",
@@ -10,13 +11,11 @@
     "@types/react": "16.8.23",
     "@types/react-dom": "16.8.5",
     "athom-api": "^2.1.194",
-    "intl": "^1.2.5",
     "isomorphic-unfetch": "^3.0.0",
     "moment": "^2.24.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-scripts": "3.0.1",
-    "react-textfit": "^1.1.0",
     "typescript": "3.5.3"
   },
   "scripts": {
