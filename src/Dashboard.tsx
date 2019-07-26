@@ -142,19 +142,44 @@ const StyledOutdoorWeatherInnerGrid = styled.div`
   }
 `
 
-const StyledWeatherValue = styled.div`
-  span {
-    font-size: 1rem;
-    font-family: 'Rubik';
-    font-weight: 500;
-  }
+interface StyledValueProps {
+  unimportant?: boolean;
+}
 
-  > p {
-    font-family: 'Rubik';
-    font-weight: 700;
-    margin: 0;
-    font-size: 1.5rem;
-  }
+const StyledWeatherValue = styled.div<StyledValueProps>`
+  opacity: ${props => props.unimportant ? '0.5' : '1'};
+` 
+
+const StyledLabel = styled.p`
+  font-size: 0.85rem;
+  font-family: 'Rubik';
+  font-weight: 400;
+  opacity: 0.5;
+  margin: 0;
+`
+
+const StyleValue = styled.span`
+  font-family: 'Rubik';
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.5rem;
+`
+
+const StyledValueIcon = styled.img`
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-2px);
+  margin-right: 8px;
+  margin-bottom: 2px;
+`
+
+const StyledUnit = styled.span`
+
+  font-family: 'Rubik';
+  font-weight: 400;
+  /* opacity: 0.5; */
+  font-size: 1.125rem;
 `
 
 const StyledForecastBox = styled.div`
@@ -172,9 +197,10 @@ const StyledForecastBox = styled.div`
 
 const StyledForecastDay = styled.div`
   /* padding: 2rem; */
-  img {
-    width: 75%;
-  }
+`
+
+const StyledForecastIcon = styled.img`
+  width: 88px;
 `
 
 const StyledRule = styled.hr`
@@ -189,7 +215,7 @@ const Dashboard = (props: DashboardProps) => {
 
   const getTimeData = (): iTimeData => ({
     date: moment().format('dd, DD.MM.YYYY'),
-    time: moment().format('h:mm')
+    time: moment().format('hh:mm')
   })
 
   const [timeData, setTimeData] = React.useState(getTimeData())
@@ -222,8 +248,6 @@ const Dashboard = (props: DashboardProps) => {
       uri: 'homey:device:7df4300e-4280-4d06-84f0-f47d6923f87a',
       id: 'measure_humidity'
     }) as iHomeyInsightLog
-
-    console.log(indoorTemperature);
 
     return {
       indoorTemperature: indoorTemperature.lastValue,
@@ -275,7 +299,6 @@ const Dashboard = (props: DashboardProps) => {
 
     // REFRESH TIME DATA
     const refreshTimeData = async () => {
-      console.log('refetching time')
       if (!didCancel) {
         setTimeData(getTimeData())
       } else {
@@ -286,7 +309,6 @@ const Dashboard = (props: DashboardProps) => {
 
     // REFRESH WEATHER DATA
     const refreshWeatherData = async () => {
-      console.log('refetching weather')
       const weatherData = await getWeatherData()
       if (!didCancel) {
         setWeatherData(weatherData)
@@ -298,7 +320,6 @@ const Dashboard = (props: DashboardProps) => {
 
     // REFRESH FORECAST DATA
     const refreshForecastData = async () => {
-      console.log('refetching forecast')
       const forecastData = await getForecastData()
       if (!didCancel) {
         setForecastData(forecastData)
@@ -317,8 +338,6 @@ const Dashboard = (props: DashboardProps) => {
     }
   }, [])
 
-  // console.log('rendering', timeData, weatherData, forecastData);
-
   return (
     <>
       <Global styles={() => css(normalize)} />
@@ -333,50 +352,70 @@ const Dashboard = (props: DashboardProps) => {
             <StyledCellWeatherIndoor>
               <StyledIndoorWeatherInnerGrid>
                 <StyledWeatherValue>
-                  <span>Temperature</span>
-                  <p>
+                  <StyledLabel>Temperature</StyledLabel>
+                  <StyleValue>
                     {weatherData.indoorTemperature}
-                    <span>&nbsp;&nbsp;{weatherData.indoorTemperatureUnits}</span>
-                  </p>
+                  </StyleValue>
+                  &ensp;
+                  <StyledUnit>
+                    {weatherData.indoorTemperatureUnits}
+                  </StyledUnit>
                 </StyledWeatherValue>
                 <StyledWeatherValue>
-                  <span>CO2</span>
-                  <p>
+                  <StyledLabel>CO2</StyledLabel>
+                  <StyleValue>
                     {weatherData.indoorCO2}
-                    <span>&nbsp;&nbsp;{weatherData.indoorCO2Units}</span>
-                  </p>
+                  </StyleValue>
+                  &ensp;
+                  <StyledUnit>
+                    {weatherData.indoorCO2Units}
+                  </StyledUnit>
                 </StyledWeatherValue>
                 <StyledWeatherValue>
-                  <span>Humidity</span>
-                  <p>
+                  <StyledLabel>Humidity</StyledLabel>
+                  <StyleValue>
                     {weatherData.indoorHumidity}
-                    <span>&nbsp;&nbsp;{weatherData.indoorHumidityUnits}</span>
-                  </p>
+                  </StyleValue>
+                  &ensp;
+                  <StyledUnit>
+                    {weatherData.indoorHumidityUnits}
+                  </StyledUnit>
                 </StyledWeatherValue>
                 <StyledWeatherValue>
-                  <span>Noise</span>
-                  <p>
+                  <StyledLabel>Noise</StyledLabel>
+                  <StyleValue>
                     {weatherData.indoorNoise}
-                    <span>&nbsp;&nbsp;{weatherData.indoorNoiseUnits}</span>
-                  </p>
+                  </StyleValue>
+                  &ensp;
+                  <StyledUnit>
+                    {weatherData.indoorNoiseUnits}
+                  </StyledUnit>
                 </StyledWeatherValue>
               </StyledIndoorWeatherInnerGrid>
             </StyledCellWeatherIndoor>
             <StyledCellWeatherOutdoor>
               <StyledOutdoorWeatherInnerGrid>
                 <StyledWeatherValue>
-                  <span>Temperature</span>
-                  <p>
-                    {weatherData.outdoorTemperature}
-                    <span>&nbsp;&nbsp;{weatherData.outdoorTemperatureUnits}</span>
-                  </p>
+                  <StyledLabel>Temperature</StyledLabel>
+                  <div>
+                    <StyleValue>
+                      {weatherData.outdoorTemperature}
+                    </StyleValue>
+                    &ensp;
+                    <StyledUnit>
+                      {weatherData.outdoorTemperatureUnits}
+                    </StyledUnit>
+                  </div>
                 </StyledWeatherValue>
                 <StyledWeatherValue>
-                  <span>Humidity</span>
-                  <p>
+                  <StyledLabel>Humidity</StyledLabel>
+                  <StyleValue>
                     {weatherData.outdoorHumidity}
-                    <span>&nbsp;&nbsp;{weatherData.outdoorHumidityUnits}</span>
-                  </p>
+                  </StyleValue>
+                  &ensp;
+                  <StyledUnit>
+                    {weatherData.outdoorHumidityUnits}
+                  </StyledUnit>
                 </StyledWeatherValue>
               </StyledOutdoorWeatherInnerGrid>
             </StyledCellWeatherOutdoor>
@@ -385,24 +424,52 @@ const Dashboard = (props: DashboardProps) => {
       </StyledBoxWeather>
       <StyledRule />
       <StyledForecastBox>
-        {forecastData && forecastData.data.slice(1, 6).map(day => (
+        {forecastData && forecastData.data.slice(0, 5).map((day, index) => (
           <StyledForecastDay key={day.datetime}>
-            <img src={`/png/${iconMappings[day.weather.code]}.png`} alt={day.weather.icon} />
-            <div>
-              {moment(day.ts*1000).format('DD.MM.YYYY')}
-            </div>
+            <StyledForecastIcon src={`/png/${iconMappings[day.weather.code]}.png`} alt={day.weather.icon} />
+            <StyledLabel>
+              { index === 0 ? 'Heute' : moment(day.ts*1000).format('DD.MM.YYYY')}
+            </StyledLabel>
             <StyledWeatherValue>
-              <p>
-                {day.min_temp.toFixed(1)} <span>°C</span>
-              </p>
+              <StyledValueIcon src={`/png/wi-direction-up.png`} alt="max temperature" />
+              <StyleValue>
+                {day.max_temp.toFixed(1)}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                °C
+              </StyledUnit>
+            </StyledWeatherValue>
+            <StyledWeatherValue unimportant>
+              <StyledValueIcon src={`/png/wi-direction-down.png`} alt="max temperature" />
+              <StyleValue>
+                {day.min_temp.toFixed(1)}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                °C
+              </StyledUnit>
             </StyledWeatherValue>
             <StyledWeatherValue>
-              <p>
-                {day.max_temp.toFixed(1)} <span>°C</span>
-              </p>
+              <StyledValueIcon src={`/png/wi-raindrops.png`} alt="max temperature" />
+              <StyleValue>
+                {day.rh}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                %
+              </StyledUnit>
             </StyledWeatherValue>
-            <p>{day.precip}</p>
-            {/* {console.log(day)} */}
+            <StyledWeatherValue>
+              <StyledValueIcon src={`/png/wi-umbrella.png`} alt="max temperature" />
+              <StyleValue>
+                {day.pop}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                %
+              </StyledUnit>
+            </StyledWeatherValue>
           </StyledForecastDay>
         ))}
       </StyledForecastBox>

@@ -8,6 +8,18 @@ export default `
 
   @font-face {
     font-family: "Rubik";
+    font-weight: 300;
+    src: url('/fonts/Rubik-Light.ttf');
+  }
+
+  @font-face {
+    font-family: "Rubik";
+    font-weight: 400;
+    src: url('/fonts/Rubik-Regular.ttf');
+  }
+
+  @font-face {
+    font-family: "Rubik";
     font-weight: 500;
     src: url('/fonts/Rubik-Medium.ttf');
   }
