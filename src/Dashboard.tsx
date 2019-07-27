@@ -3,12 +3,15 @@ import React from 'react'
 import fetch from 'isomorphic-unfetch'
 
 import { Global, css } from '@emotion/core'
-import styled from '@emotion/styled'
+import styled from "@emotion/styled/macro";
+
+import { HomeyAPI } from 'athom-api';
 
 import normalize from './styles/normalize'
 import { colors } from './styles/variables'
-import mappings from './mappings/weatherbit.json'
-import { HomeyAPI } from 'athom-api';
+
+import weatherbitMappings from './mappings/weatherbit.json'
+import moonMappings from './mappings/moonphases.json'
 
 import moment from 'moment';
 import 'moment/locale/de';
@@ -92,6 +95,8 @@ interface iForecastData {
   state_code: string
 }
 
+for(var i = 0; i <= 1; i += 0.0625) { console.log(i); }
+
 const StyledBox = styled.div`
   padding: 2rem;
 `
@@ -132,13 +137,13 @@ const StyledIndoorWeatherInnerGrid = styled.div`
   }
 
   > *:not(:nth-last-child(-n+2)) {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
 `
 
 const StyledOutdoorWeatherInnerGrid = styled.div`
   > *:not(:last-child) {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
 `
 
@@ -167,11 +172,10 @@ const StyleValue = styled.span`
 
 const StyledValueIcon = styled.img`
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  transform: translateX(-2px);
+  width: 22px;
+  height: 22px;
+  transform: translateY(3px);
   margin-right: 8px;
-  margin-bottom: 2px;
 `
 
 const StyledUnit = styled.span`
@@ -197,6 +201,9 @@ const StyledForecastBox = styled.div`
 
 const StyledForecastDay = styled.div`
   /* padding: 2rem; */
+  > *, > ${StyledLabel} {
+    margin-bottom: 0.5rem;
+  }
 `
 
 const StyledForecastIcon = styled.img`
@@ -207,7 +214,14 @@ const StyledRule = styled.hr`
   margin: 0;
 `
 
-const iconMappings: { [key: string]: string } = mappings
+const StyledSmallText = styled.span`
+  font-size: 0.825rem;
+  transform: translateY(-3px);
+  display: inline-block;
+`
+
+const weatherbitIconMappings: { [key: string]: string } = weatherbitMappings
+const moonphasesMappings: { [key: string]: string } = moonMappings
 
 const Dashboard = (props: DashboardProps) => {
 
@@ -426,12 +440,12 @@ const Dashboard = (props: DashboardProps) => {
       <StyledForecastBox>
         {forecastData && forecastData.data.slice(0, 5).map((day, index) => (
           <StyledForecastDay key={day.datetime}>
-            <StyledForecastIcon src={`/png/${iconMappings[day.weather.code]}.png`} alt={day.weather.icon} />
+            <StyledForecastIcon src={`/png/${weatherbitIconMappings[day.weather.code]}.png`} alt={day.weather.icon} />
             <StyledLabel>
               { index === 0 ? 'Heute' : moment(day.ts*1000).format('DD.MM.YYYY')}
             </StyledLabel>
             <StyledWeatherValue>
-              <StyledValueIcon src={`/png/wi-direction-up.png`} alt="max temperature" />
+              <StyledValueIcon src={`/png/arrow-up.png`} alt="max temperature" />
               <StyleValue>
                 {day.max_temp.toFixed(1)}
               </StyleValue>
@@ -441,7 +455,7 @@ const Dashboard = (props: DashboardProps) => {
               </StyledUnit>
             </StyledWeatherValue>
             <StyledWeatherValue unimportant>
-              <StyledValueIcon src={`/png/wi-direction-down.png`} alt="max temperature" />
+              <StyledValueIcon src={`/png/arrow-down.png`} alt="min temperature" />
               <StyleValue>
                 {day.min_temp.toFixed(1)}
               </StyleValue>
@@ -451,7 +465,7 @@ const Dashboard = (props: DashboardProps) => {
               </StyledUnit>
             </StyledWeatherValue>
             <StyledWeatherValue>
-              <StyledValueIcon src={`/png/wi-raindrops.png`} alt="max temperature" />
+              <StyledValueIcon src={`/png/humidity.png`} alt="humidity" />
               <StyleValue>
                 {day.rh}
               </StyleValue>
@@ -461,7 +475,7 @@ const Dashboard = (props: DashboardProps) => {
               </StyledUnit>
             </StyledWeatherValue>
             <StyledWeatherValue>
-              <StyledValueIcon src={`/png/wi-umbrella.png`} alt="max temperature" />
+              <StyledValueIcon src={`/png/umbrella.png`} alt="likelihood of rain" />
               <StyleValue>
                 {day.pop}
               </StyleValue>
@@ -469,6 +483,12 @@ const Dashboard = (props: DashboardProps) => {
               <StyledUnit>
                 %
               </StyledUnit>
+            </StyledWeatherValue>
+            <StyledWeatherValue>
+              <StyledValueIcon src={`/png/moon_${Math.round(day.moon_phase*16)/16}.png`} alt="moon phase" />
+              <StyledSmallText>
+                {moonphasesMappings[Math.round(day.moon_phase*16)/16]}
+              </StyledSmallText>
             </StyledWeatherValue>
           </StyledForecastDay>
         ))}
