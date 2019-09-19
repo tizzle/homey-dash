@@ -10,7 +10,7 @@ import { HomeyAPI } from 'athom-api';
 import normalize from './styles/normalize'
 import { colors } from './styles/variables'
 
-import weatherbitMappings from './mappings/weatherbit.json'
+import darkskyMappings from './mappings/darksky.json'
 import moonMappings from './mappings/moonphases.json'
 
 import moment from 'moment';
@@ -27,95 +27,53 @@ interface iTimeData {
 
 interface iWeatherData {
   indoorTemperature: string
-  indoorTemperatureUnits: string
   indoorHumidity: string
-  indoorHumidityUnits: string
   indoorCO2: string
-  indoorCO2Units: string
   indoorNoise: string
-  indoorNoiseUnits: string
   outdoorTemperature: string
-  outdoorTemperatureUnits: string
   outdoorHumidity: string
+}
+
+interface iWeatherDataUnits {
+  indoorTemperatureUnits: string
+  indoorHumidityUnits: string
+  indoorCO2Units: string
+  indoorNoiseUnits: string
+  outdoorTemperatureUnits: string
   outdoorHumidityUnits: string
 }
 
-interface iHomeyInsightLog {
-  lastValue: string
-  units: string
+interface iHomeyDevice extends HomeyAPI.ManagerDevices.Device {
+  capabilitiesObj: {
+    [key: string]: {
+      value: number
+      units: string
+    }
+  }
 }
 
 interface iForecastData {
-  data: {  
-    valid_date: string
-    ts: number
-    datetime: string
-    wind_gust_spd: number
-    wind_spd: number
-    wind_dir: number
-    wind_cdir: string
-    wind_cdir_full: string
-    temp: number
-    max_temp: number
-    min_temp: number
-    app_max_temp: number
-    app_min_temp: number
-    pop: number
-    precip: number
-    snow: number
-    snow_depth: number
-    slp: number
-    pres: number
-    dewpt: number
-    rh: number
-    weather: {  
+  daily: {
+    data: {
+      time: number
       icon: string
-      code: string
-      description: string
-    },
-    pod: string
-    clouds_low: number
-    clouds_mid: number
-    clouds_hi: number
-    clouds: number
-    vis: number
-    max_dhi: number
-    uv: number
-    moon_phase: number
-    moonrise_ts: number
-    moonset_ts: number
-    sunrise_ts: number
-    sunset_ts: number
-  }[],
-  city_name: string
-  lon: string
-  timezone: string
-  lat: string
-  country_code: string
-  state_code: string
+      temperatureMin: number
+      temperatureMax: number
+      humidity: number
+      precipProbability: number
+      moonPhase: number
+    }[]
+  }
 }
-
-for(var i = 0; i <= 1; i += 0.0625) { console.log(i); }
 
 const StyledBox = styled.div`
   padding: 2rem;
 `
 
 const StyledBoxClock = styled(StyledBox)`
+  position: relative;
   font-family: 'Rubik-Mono';
   line-height: 1;
-`
-
-const StyledBoxWeather = styled.div`
-  display: flex;
-
-  > *:first-child {
-    width: 66.66%;
-  }
-  
-  > *:last-child {
-    width: 33.33%;
-  }
 `
 
 const StyledCellWeatherIndoor = styled(StyledBox)`
@@ -132,11 +90,11 @@ const StyledIndoorWeatherInnerGrid = styled.div`
     width: calc(50% - 1rem);
   }
 
-  > *:nth-child(odd) {
+  > *:nth-of-type(odd) {
     margin-right: 2rem;
   }
 
-  > *:not(:nth-last-child(-n+2)) {
+  > *:not(:nth-last-of-type(-n+2)) {
     margin-bottom: 1rem;
   }
 `
@@ -144,6 +102,19 @@ const StyledIndoorWeatherInnerGrid = styled.div`
 const StyledOutdoorWeatherInnerGrid = styled.div`
   > *:not(:last-child) {
     margin-bottom: 1rem;
+  }
+`
+
+const StyledBoxWeather = styled.div`
+  position: relative;
+  display: flex;
+
+  > ${StyledCellWeatherIndoor} {
+    width: 66.66%;
+  }
+  
+  > ${StyledCellWeatherOutdoor} {
+    width: 33.33%;
   }
 `
 
@@ -182,11 +153,11 @@ const StyledUnit = styled.span`
 
   font-family: 'Rubik';
   font-weight: 400;
-  /* opacity: 0.5; */
   font-size: 1.125rem;
 `
 
 const StyledForecastBox = styled.div`
+  position: relative;
   display: flex;
   padding: 2rem;
   
@@ -200,7 +171,6 @@ const StyledForecastBox = styled.div`
 `
 
 const StyledForecastDay = styled.div`
-  /* padding: 2rem; */
   > *, > ${StyledLabel} {
     margin-bottom: 0.5rem;
   }
@@ -220,123 +190,156 @@ const StyledSmallText = styled.span`
   display: inline-block;
 `
 
-const weatherbitIconMappings: { [key: string]: string } = weatherbitMappings
+const StyledLastUpdated = styled.div`
+  font-family: 'Rubik';
+  font-weight: 400;
+  font-size: 0.5rem;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0 !important;
+  text-align: right;
+  opacity: 0.25;
+`
+
+const darkskyIconMappings: { [key: string]: string } = darkskyMappings
 const moonphasesMappings: { [key: string]: string } = moonMappings
+
+
+// TIME DATA
+
+const getTimeData = (): iTimeData => ({
+  date: moment().format('dd, DD.MM.YYYY'),
+  time: moment().format('HH:mm')
+})
+
+
+// FORECAST DATA
+
+const proxy = 'https://cors-anywhere.herokuapp.com/';
+const apiUrl = 'https://api.darksky.net/forecast/e4e1f7df1454a1246c05f4ad1c0ccbae/53.56,9.96?units=ca'
+
+const getForecastData = async (): Promise<iForecastData> => {
+  const response = await fetch(
+    `${proxy}${apiUrl}`,
+    {
+      method: 'GET'
+    }
+  )
+  const data = await response.json()
+  return data;
+}
+
 
 const Dashboard = (props: DashboardProps) => {
 
-  // TIME DATA
-
-  const getTimeData = (): iTimeData => ({
-    date: moment().format('dd, DD.MM.YYYY'),
-    time: moment().format('hh:mm')
-  })
-
+  // DATA
   const [timeData, setTimeData] = React.useState(getTimeData())
-
-
-  // WEATHER DATA
-
-  const getWeatherData = async (): Promise<iWeatherData> => {
-    const indoorTemperature = await props.homeyAPI.insights.getLog({
-      uri: 'homey:device:fad84db7-eb87-4110-bb60-38d658933797',
-      id: 'measure_temperature'
-    }) as iHomeyInsightLog
-    const indoorHumidity = await props.homeyAPI.insights.getLog({
-      uri: 'homey:device:fad84db7-eb87-4110-bb60-38d658933797',
-      id: 'measure_humidity'
-    }) as iHomeyInsightLog
-    const indoorCo2 = await props.homeyAPI.insights.getLog({
-      uri: 'homey:device:fad84db7-eb87-4110-bb60-38d658933797',
-      id: 'measure_co2'
-    }) as iHomeyInsightLog
-    const indoorNoise = await props.homeyAPI.insights.getLog({
-      uri: 'homey:device:fad84db7-eb87-4110-bb60-38d658933797',
-      id: 'measure_noise'
-    }) as iHomeyInsightLog
-    const outdoorTemperature = await props.homeyAPI.insights.getLog({
-      uri: 'homey:device:7df4300e-4280-4d06-84f0-f47d6923f87a',
-      id: 'measure_temperature'
-    }) as iHomeyInsightLog
-    const outdoorHumidity = await props.homeyAPI.insights.getLog({
-      uri: 'homey:device:7df4300e-4280-4d06-84f0-f47d6923f87a',
-      id: 'measure_humidity'
-    }) as iHomeyInsightLog
-
-    return {
-      indoorTemperature: indoorTemperature.lastValue,
-      indoorTemperatureUnits: indoorTemperature.units,
-      indoorHumidity: indoorHumidity.lastValue,
-      indoorHumidityUnits: indoorHumidity.units,
-      indoorCO2: indoorCo2.lastValue,
-      indoorCO2Units: indoorCo2.units,
-      indoorNoise: indoorNoise.lastValue,
-      indoorNoiseUnits: indoorNoise.units,
-      outdoorTemperature: outdoorTemperature.lastValue,
-      outdoorTemperatureUnits: outdoorTemperature.units,
-      outdoorHumidity: outdoorHumidity.lastValue,
-      outdoorHumidityUnits: outdoorHumidity.units
-    }
-  }
-
-  const [weatherData, setWeatherData] = React.useState<iWeatherData | null>(null)
-
-
-  // FORECAST DATA
-
-  const getForecastData = async (): Promise<iForecastData> => {
-    const response = await fetch(
-      'https://api.weatherbit.io/v2.0/forecast/daily?key=166faceaea164d4ea2937c00e47523f4&lang=de&days=6&lat=53.56&lon=9.96',
-      {
-        method: 'GET'
-      }
-    )
-    const data = await response.json()
-    return data;
-  }
-
+  const [weatherDataUnits, setWeatherDataUnits] = React.useState<iWeatherDataUnits | null>(null)
+  const [indoorTemperature, setIndoorTemperature] = React.useState<iWeatherData['indoorTemperature'] | null>(null)
+  const [indoorCO2, setIndoorCO2] = React.useState<iWeatherData['indoorCO2'] | null>(null)
+  const [indoorHumidity, setIndoorHumidity] = React.useState<iWeatherData['indoorHumidity'] | null>(null)
+  const [indoorNoise, setIndoorNoise] = React.useState<iWeatherData['indoorNoise'] | null>(null)
+  const [outdoorTemperature, setOutdoorTemperature] = React.useState<iWeatherData['outdoorTemperature'] | null>(null)
+  const [outdoorHumidity, setOutdoorHumidity] = React.useState<iWeatherData['outdoorHumidity'] | null>(null)
   const [forecastData, setForecastData] = React.useState<iForecastData | null>(null)
 
+  // UPDATE TRACKER
+  const [lastUpdatedTimeData, setLastUpdatedTimeData] = React.useState(moment())
+  const [lastUpdatedWeatherData, setLastUpdatedWeatherData] = React.useState(moment())
+  const [lastUpdatedForecastData, setLastUpdatedForecastData] = React.useState(moment())
 
-  // FETCH ALL THIS REPEATEDLY
+
+
+// WEATHER DATA
+
+const getNetatmoDevices = async () => {
+  console.log('getNetatmoDevices')
+  const netatmoIndoor = await props.homeyAPI.devices.getDevice({id:'fad84db7-eb87-4110-bb60-38d658933797'}) as iHomeyDevice
+  const netatmoOutdoor = await props.homeyAPI.devices.getDevice({id:'7df4300e-4280-4d06-84f0-f47d6923f87a'}) as iHomeyDevice
+
+  netatmoIndoor.makeCapabilityInstance('measure_temperature', (value: any) => {
+    console.log('indoor measure_temperature', value)
+    setIndoorTemperature(value.toFixed(1))
+    setLastUpdatedWeatherData(moment())
+  })
+  
+  netatmoIndoor.makeCapabilityInstance('measure_humidity', (value: any) => {
+    console.log('indoor measure_humidity', value)
+    setIndoorHumidity(value.toFixed(1))
+    setLastUpdatedWeatherData(moment())
+  })
+
+  netatmoIndoor.makeCapabilityInstance('measure_co2', (value: any) => {
+    console.log('indoor measure_co2', value)
+    setIndoorCO2(value.toFixed(1))
+    setLastUpdatedWeatherData(moment())
+  })
+
+  netatmoIndoor.makeCapabilityInstance('measure_noise', (value: any) => {
+    console.log('indoor measure_noise', value)
+    setIndoorNoise(value.toFixed(1))
+    setLastUpdatedWeatherData(moment())
+  })
+  
+  netatmoOutdoor.makeCapabilityInstance('measure_temperature', (value: any) => {
+    console.log('outdoor measure_temperature', value)
+    setOutdoorTemperature(value.toFixed(1))
+    setLastUpdatedWeatherData(moment())
+  })
+  
+  netatmoOutdoor.makeCapabilityInstance('measure_humidity', (value: any) => {
+    console.log('indoor measure_humidity', value)
+    setOutdoorHumidity(value.toFixed(1))
+    setLastUpdatedWeatherData(moment())
+  })
+
+  setIndoorTemperature(netatmoIndoor.capabilitiesObj.measure_temperature.value.toFixed(1))
+  setIndoorHumidity(netatmoIndoor.capabilitiesObj.measure_humidity.value.toFixed(0))
+  setIndoorCO2(netatmoIndoor.capabilitiesObj.measure_co2.value.toFixed(0))
+  setIndoorNoise(netatmoIndoor.capabilitiesObj.measure_noise.value.toFixed(0))
+  setOutdoorTemperature(netatmoOutdoor.capabilitiesObj.measure_temperature.value.toFixed(1))
+  setOutdoorHumidity(netatmoOutdoor.capabilitiesObj.measure_humidity.value.toFixed(0))
+  
+  setWeatherDataUnits({
+    indoorTemperatureUnits: netatmoIndoor.capabilitiesObj.measure_temperature.units,
+    indoorHumidityUnits: netatmoIndoor.capabilitiesObj.measure_humidity.units,
+    indoorCO2Units: netatmoIndoor.capabilitiesObj.measure_co2.units,
+    indoorNoiseUnits: netatmoIndoor.capabilitiesObj.measure_noise.units,
+    outdoorTemperatureUnits: netatmoOutdoor.capabilitiesObj.measure_temperature.units,
+    outdoorHumidityUnits: netatmoOutdoor.capabilitiesObj.measure_humidity.units,
+  })
+
+}
+
+  // FETCH DATA (EXCEPT HOMEY) REPEATEDLY
 
   React.useEffect(() => {
     let didCancel = false
 
-    const timeInterval = 10000;
-    const weatherInterval = 60000;
-    const forecastInterval = 172800;
+    const timeInterval = 10000; // every 10 seconds
+    const forecastInterval = 900000; // every 15 minutes
 
     let refreshTimeInterval: NodeJS.Timeout
-    let refreshWeatherInterval: NodeJS.Timeout
     let refreshForecastInterval: NodeJS.Timeout
 
     // REFRESH TIME DATA
     const refreshTimeData = async () => {
       if (!didCancel) {
         setTimeData(getTimeData())
+        setLastUpdatedTimeData(moment())
       } else {
         clearInterval(refreshTimeInterval)
       }
     }
     refreshTimeInterval = setInterval(refreshTimeData, timeInterval)
 
-    // REFRESH WEATHER DATA
-    const refreshWeatherData = async () => {
-      const weatherData = await getWeatherData()
-      if (!didCancel) {
-        setWeatherData(weatherData)
-      } else {
-        clearInterval(refreshWeatherInterval)
-      }
-    }
-    refreshWeatherInterval = setInterval(refreshWeatherData, weatherInterval)
-
     // REFRESH FORECAST DATA
     const refreshForecastData = async () => {
-      const forecastData = await getForecastData()
       if (!didCancel) {
+        const forecastData = await getForecastData()
         setForecastData(forecastData)
+        setLastUpdatedForecastData(moment())
       } else {
         clearInterval(refreshForecastInterval)
       }
@@ -344,8 +347,8 @@ const Dashboard = (props: DashboardProps) => {
     refreshForecastInterval = setInterval(refreshForecastData, forecastInterval)
 
     refreshTimeData();
-    refreshWeatherData();
     refreshForecastData();
+    getNetatmoDevices();
 
     return () => {
       didCancel = true
@@ -356,98 +359,97 @@ const Dashboard = (props: DashboardProps) => {
     <>
       <Global styles={() => css(normalize)} />
       <StyledBoxClock>
+        <StyledLastUpdated>Last updated: {lastUpdatedTimeData.format('HH:mm:ss')}</StyledLastUpdated>
         <p style={{ fontSize: '165px'}}>{timeData.time}</p>
         <p style={{ fontSize: '59px'}}>{timeData.date}</p>
       </StyledBoxClock>
       <StyledRule />
       <StyledBoxWeather>
-        {weatherData && (
-          <>
-            <StyledCellWeatherIndoor>
-              <StyledIndoorWeatherInnerGrid>
-                <StyledWeatherValue>
-                  <StyledLabel>Temperature</StyledLabel>
-                  <StyleValue>
-                    {weatherData.indoorTemperature}
-                  </StyleValue>
-                  &ensp;
-                  <StyledUnit>
-                    {weatherData.indoorTemperatureUnits}
-                  </StyledUnit>
-                </StyledWeatherValue>
-                <StyledWeatherValue>
-                  <StyledLabel>CO2</StyledLabel>
-                  <StyleValue>
-                    {weatherData.indoorCO2}
-                  </StyleValue>
-                  &ensp;
-                  <StyledUnit>
-                    {weatherData.indoorCO2Units}
-                  </StyledUnit>
-                </StyledWeatherValue>
-                <StyledWeatherValue>
-                  <StyledLabel>Humidity</StyledLabel>
-                  <StyleValue>
-                    {weatherData.indoorHumidity}
-                  </StyleValue>
-                  &ensp;
-                  <StyledUnit>
-                    {weatherData.indoorHumidityUnits}
-                  </StyledUnit>
-                </StyledWeatherValue>
-                <StyledWeatherValue>
-                  <StyledLabel>Noise</StyledLabel>
-                  <StyleValue>
-                    {weatherData.indoorNoise}
-                  </StyleValue>
-                  &ensp;
-                  <StyledUnit>
-                    {weatherData.indoorNoiseUnits}
-                  </StyledUnit>
-                </StyledWeatherValue>
-              </StyledIndoorWeatherInnerGrid>
-            </StyledCellWeatherIndoor>
-            <StyledCellWeatherOutdoor>
-              <StyledOutdoorWeatherInnerGrid>
-                <StyledWeatherValue>
-                  <StyledLabel>Temperature</StyledLabel>
-                  <div>
-                    <StyleValue>
-                      {weatherData.outdoorTemperature}
-                    </StyleValue>
-                    &ensp;
-                    <StyledUnit>
-                      {weatherData.outdoorTemperatureUnits}
-                    </StyledUnit>
-                  </div>
-                </StyledWeatherValue>
-                <StyledWeatherValue>
-                  <StyledLabel>Humidity</StyledLabel>
-                  <StyleValue>
-                    {weatherData.outdoorHumidity}
-                  </StyleValue>
-                  &ensp;
-                  <StyledUnit>
-                    {weatherData.outdoorHumidityUnits}
-                  </StyledUnit>
-                </StyledWeatherValue>
-              </StyledOutdoorWeatherInnerGrid>
-            </StyledCellWeatherOutdoor>
-          </>
-        )}
+        <StyledLastUpdated>Last updated: {lastUpdatedWeatherData.format('HH:mm:ss')}</StyledLastUpdated>
+        <StyledCellWeatherIndoor>
+          <StyledIndoorWeatherInnerGrid>
+            <StyledWeatherValue>
+              <StyledLabel>Temperature</StyledLabel>
+              <StyleValue>
+                {indoorTemperature}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                {weatherDataUnits && weatherDataUnits.indoorTemperatureUnits}
+              </StyledUnit>
+            </StyledWeatherValue>
+            <StyledWeatherValue>
+              <StyledLabel>CO2</StyledLabel>
+              <StyleValue>
+                {indoorCO2}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                {weatherDataUnits && weatherDataUnits.indoorCO2Units}
+              </StyledUnit>
+            </StyledWeatherValue>
+            <StyledWeatherValue>
+              <StyledLabel>Humidity</StyledLabel>
+              <StyleValue>
+                {indoorHumidity}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                {weatherDataUnits && weatherDataUnits.indoorHumidityUnits}
+              </StyledUnit>
+            </StyledWeatherValue>
+            <StyledWeatherValue>
+              <StyledLabel>Noise</StyledLabel>
+              <StyleValue>
+                {indoorNoise}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                {weatherDataUnits && weatherDataUnits.indoorNoiseUnits}
+              </StyledUnit>
+            </StyledWeatherValue>
+          </StyledIndoorWeatherInnerGrid>
+        </StyledCellWeatherIndoor>
+        <StyledCellWeatherOutdoor>
+          <StyledOutdoorWeatherInnerGrid>
+            <StyledWeatherValue>
+              <StyledLabel>Temperature</StyledLabel>
+              <div>
+                <StyleValue>
+                  {outdoorTemperature}
+                </StyleValue>
+                &ensp;
+                <StyledUnit>
+                  {weatherDataUnits && weatherDataUnits.outdoorTemperatureUnits}
+                </StyledUnit>
+              </div>
+            </StyledWeatherValue>
+            <StyledWeatherValue>
+              <StyledLabel>Humidity</StyledLabel>
+              <StyleValue>
+                {outdoorHumidity}
+              </StyleValue>
+              &ensp;
+              <StyledUnit>
+                {weatherDataUnits && weatherDataUnits.outdoorHumidityUnits}
+              </StyledUnit>
+            </StyledWeatherValue>
+          </StyledOutdoorWeatherInnerGrid>
+        </StyledCellWeatherOutdoor>
       </StyledBoxWeather>
       <StyledRule />
       <StyledForecastBox>
-        {forecastData && forecastData.data.slice(0, 5).map((day, index) => (
-          <StyledForecastDay key={day.datetime}>
-            <StyledForecastIcon src={`/png/${weatherbitIconMappings[day.weather.code]}.png`} alt={day.weather.icon} />
+        <StyledLastUpdated>Last updated: {lastUpdatedForecastData.format('HH:mm:ss')}</StyledLastUpdated>
+        {forecastData && forecastData.daily.data.slice(0, 5).map((day, index) => (
+          <StyledForecastDay key={day.time}>
+            <StyledForecastIcon src={`/png/${darkskyIconMappings[day.icon]}.png`} alt={day.icon} />
             <StyledLabel>
-              { index === 0 ? 'Heute' : moment(day.ts*1000).format('DD.MM.YYYY')}
+              { index === 0 ? 'Heute' : moment(day.time*1000).format('DD.MM.YYYY')}
             </StyledLabel>
             <StyledWeatherValue>
               <StyledValueIcon src={`/png/arrow-up.png`} alt="max temperature" />
               <StyleValue>
-                {day.max_temp.toFixed(1)}
+                {day.temperatureMax.toFixed(1)}
               </StyleValue>
               &ensp;
               <StyledUnit>
@@ -457,7 +459,7 @@ const Dashboard = (props: DashboardProps) => {
             <StyledWeatherValue unimportant>
               <StyledValueIcon src={`/png/arrow-down.png`} alt="min temperature" />
               <StyleValue>
-                {day.min_temp.toFixed(1)}
+                {day.temperatureMin.toFixed(1)}
               </StyleValue>
               &ensp;
               <StyledUnit>
@@ -467,7 +469,7 @@ const Dashboard = (props: DashboardProps) => {
             <StyledWeatherValue>
               <StyledValueIcon src={`/png/humidity.png`} alt="humidity" />
               <StyleValue>
-                {day.rh}
+                {(day.humidity*100).toFixed(0)}
               </StyleValue>
               &ensp;
               <StyledUnit>
@@ -477,7 +479,7 @@ const Dashboard = (props: DashboardProps) => {
             <StyledWeatherValue>
               <StyledValueIcon src={`/png/umbrella.png`} alt="likelihood of rain" />
               <StyleValue>
-                {day.pop}
+                {(day.precipProbability*100).toFixed(0)}
               </StyleValue>
               &ensp;
               <StyledUnit>
@@ -485,9 +487,9 @@ const Dashboard = (props: DashboardProps) => {
               </StyledUnit>
             </StyledWeatherValue>
             <StyledWeatherValue>
-              <StyledValueIcon src={`/png/moon_${Math.round(day.moon_phase*16)/16}.png`} alt="moon phase" />
+              <StyledValueIcon src={`/png/moon_${Math.round(day.moonPhase*16)/16}.png`} alt="moon phase" />
               <StyledSmallText>
-                {moonphasesMappings[Math.round(day.moon_phase*16)/16]}
+                {moonphasesMappings[Math.round(day.moonPhase*16)/16]}
               </StyledSmallText>
             </StyledWeatherValue>
           </StyledForecastDay>

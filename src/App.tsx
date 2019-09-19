@@ -27,6 +27,7 @@ const App = () => {
           scopes: [
             'account.homeys.readonly',
             'homey.manager.flows.readonly',
+            'homey.device.readonly',
             'homey.insights.readonly',
           ]
         });
