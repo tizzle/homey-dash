@@ -223,7 +223,8 @@ const getForecastData = async (): Promise<iForecastData> => {
   const response = await fetch(
     `${proxy}${apiUrl}`,
     {
-      method: 'GET'
+      method: 'GET',
+      headers: {'Cache-Control': 'no-cache'}
     }
   )
   const data = await response.json()
@@ -314,11 +315,12 @@ const getNetatmoDevices = async () => {
 
   // FETCH DATA (EXCEPT HOMEY) REPEATEDLY
 
+
   React.useEffect(() => {
     let didCancel = false
 
     const timeInterval = 10000; // every 10 seconds
-    const forecastInterval = 900000; // every 15 minutes
+    const forecastInterval = 300000; // every 5 minutes
 
     let refreshTimeInterval: NodeJS.Timeout
     let refreshForecastInterval: NodeJS.Timeout
@@ -332,8 +334,7 @@ const getNetatmoDevices = async () => {
         clearInterval(refreshTimeInterval)
       }
     }
-    refreshTimeInterval = setInterval(refreshTimeData, timeInterval)
-
+    
     // REFRESH FORECAST DATA
     const refreshForecastData = async () => {
       if (!didCancel) {
@@ -344,11 +345,13 @@ const getNetatmoDevices = async () => {
         clearInterval(refreshForecastInterval)
       }
     }
-    refreshForecastInterval = setInterval(refreshForecastData, forecastInterval)
 
     refreshTimeData();
     refreshForecastData();
     getNetatmoDevices();
+
+    refreshTimeInterval = setInterval(refreshTimeData, timeInterval)
+    refreshForecastInterval = setInterval(refreshForecastData, forecastInterval)
 
     return () => {
       didCancel = true
@@ -359,13 +362,13 @@ const getNetatmoDevices = async () => {
     <>
       <Global styles={() => css(normalize)} />
       <StyledBoxClock>
-        <StyledLastUpdated>Last updated: {lastUpdatedTimeData.format('HH:mm:ss')}</StyledLastUpdated>
+        <StyledLastUpdated>Last updated: {lastUpdatedTimeData.format('DD/MM HH:mm:ss')}</StyledLastUpdated>
         <p style={{ fontSize: '165px'}}>{timeData.time}</p>
         <p style={{ fontSize: '59px'}}>{timeData.date}</p>
       </StyledBoxClock>
       <StyledRule />
       <StyledBoxWeather>
-        <StyledLastUpdated>Last updated: {lastUpdatedWeatherData.format('HH:mm:ss')}</StyledLastUpdated>
+        <StyledLastUpdated>Last updated: {lastUpdatedWeatherData.format('DD/MM HH:mm:ss')}</StyledLastUpdated>
         <StyledCellWeatherIndoor>
           <StyledIndoorWeatherInnerGrid>
             <StyledWeatherValue>
@@ -439,7 +442,7 @@ const getNetatmoDevices = async () => {
       </StyledBoxWeather>
       <StyledRule />
       <StyledForecastBox>
-        <StyledLastUpdated>Last updated: {lastUpdatedForecastData.format('HH:mm:ss')}</StyledLastUpdated>
+        <StyledLastUpdated>Last updated: {lastUpdatedForecastData.format('DD/MM HH:mm:ss')}</StyledLastUpdated>
         {forecastData && forecastData.daily.data.slice(0, 5).map((day, index) => (
           <StyledForecastDay key={day.time}>
             <StyledForecastIcon src={`/png/${darkskyIconMappings[day.icon]}.png`} alt={day.icon} />
